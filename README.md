@@ -92,6 +92,4 @@ linux教程方面，属红帽最为知名，因此配套课程以红帽作为编
 
 ## 软件安装
 
-双击“LabBox-1.0.0-Setup”软件进行安装。
-
-![image-20260418081420644](https://create1997linxudo.oss-cn-guangzhou.aliyuncs.com/file/image-20260418081420644.png)
+双击“LabBox-1.0.0-Portable.exe”直接运行，免安装。

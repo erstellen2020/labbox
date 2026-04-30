@@ -1,0 +1,75 @@
+{
+  "name": "universal-lab-pro",
+  "version": "1.0.0",
+  "description": "LabBox - Linux实验平台",
+  "author": "LabBox",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "rebuild-native": "electron-rebuild -f -w node-pty",
+    "postinstall": "electron-builder install-app-deps",
+    "build": "electron-builder --win",
+    "build:dir": "electron-builder --win --dir"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.7.2",
+    "mermaid": "^11.14.0",
+    "node-pty": "^1.1.0",
+    "ssh2": "^1.15.0",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "electron": "^41.2.0",
+    "electron-builder": "^26.8.1",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.labbox.universal-lab-pro",
+    "productName": "LabBox",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "main-runtime.js",
+      "main-storage.js",
+      "main-vmware.js",
+      "preload.js",
+      "renderer.js",
+      "renderer-actions.js",
+      "renderer-model.js",
+      "renderer-ops.js",
+      "renderer-ui.js",
+      "renderer-vendor.js",
+      "index.html",
+      "styles.css",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "icon": "icon.ico",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-Portable.${ext}"
+    },
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/node-pty/**/*",
+      "node_modules/ssh2/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "instructions",
+        "to": "instructions"
+      }
+    ]
+  }
+}

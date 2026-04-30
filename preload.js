@@ -1,0 +1,41 @@
+const { contextBridge, ipcRenderer, clipboard } = require('electron');
+contextBridge.exposeInMainWorld('api', {
+    readData: () => ipcRenderer.invoke('read-local-data'),
+    writeData: (data) => ipcRenderer.invoke('write-local-data', data),
+    importLocal: () => ipcRenderer.invoke('import-local'),
+    importInstructions: () => ipcRenderer.invoke('import-instructions'),
+    chooseDirectory: (payload) => ipcRenderer.invoke('choose-directory', payload),
+    chooseFile: (payload) => ipcRenderer.invoke('choose-file', payload),
+    stageImportedManualAssets: (payload) => ipcRenderer.invoke('stage-imported-manual-assets', payload),
+    initLocalShell: () => ipcRenderer.send('init-local-shell'),
+    sendConnect: (config) => ipcRenderer.send('ssh-connect', config),
+    sendInput: (payload) => ipcRenderer.send('terminal-input', payload),
+    resizeTerminal: (payload) => ipcRenderer.send('terminal-resize', payload),
+    onStatus: (cb) => ipcRenderer.on('ssh-status', (e, d) => cb(d)),
+    onData: (cb) => ipcRenderer.on('terminal-incoming', (e, d) => cb(d)),
+    onResourceStatus: (cb) => ipcRenderer.on('resource-status', (e, d) => cb(d)),
+    getVMs: () => ipcRenderer.invoke('get-vms'),
+    getVMStatus: (vmxPath) => ipcRenderer.invoke('get-vm-status', vmxPath),
+    getVMIP: (vmxPath) => ipcRenderer.invoke('get-vm-ip', vmxPath),
+    getVMPowerState: (vmxPath) => ipcRenderer.invoke('get-vm-power-state', vmxPath),
+    getHostResources: () => ipcRenderer.invoke('get-host-resources'),
+    pathExists: (targetPath) => ipcRenderer.invoke('path-exists', targetPath),
+    vmCommand: (payload) => ipcRenderer.invoke('vm-command', payload),
+    createVmFromOva: (payload) => ipcRenderer.invoke('create-vm-from-ova', payload),
+    openPath: (targetPath) => ipcRenderer.invoke('open-path', targetPath),
+    openExternalUrl: (targetUrl) => ipcRenderer.invoke('open-external-url', targetUrl),
+    verify: (payload) => ipcRenderer.invoke('verify-lab', payload),
+    applyResourceFiles: (payload) => ipcRenderer.invoke('apply-resource-files', payload),
+    uploadFileToResource: (payload) => ipcRenderer.invoke('upload-file-to-resource', payload),
+    initializeResource: (payload) => ipcRenderer.invoke('initialize-resource', payload),
+    resetResourceEnvironment: (payload) => ipcRenderer.invoke('reset-resource-environment', payload),
+    deleteResourceInstance: (payload) => ipcRenderer.invoke('delete-resource-instance', payload),
+    leaveLabNow: (payload) => ipcRenderer.invoke('leave-lab-now', payload),
+    setLabActivity: (payload) => ipcRenderer.invoke('set-lab-activity', payload),
+    readClipboardText: () => clipboard.readText(),
+    writeClipboardText: (text) => clipboard.writeText(String(text || "")),
+    clearTerminalListeners: () => {
+      ipcRenderer.removeAllListeners('ssh-status');
+      ipcRenderer.removeAllListeners('terminal-incoming');
+    }
+  });

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>laobiao Lab Box</title>
+  <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="global-nav">
+      <button id="nav-home" class="nav-icon active" title="首页 / 工作台" onclick="resetWorkspace()">首页</button>
+      <button id="nav-resources" class="nav-icon" title="VMware 管理器" onclick="switchSection('resources')">资源</button>
+      <button id="nav-settings" class="nav-icon" title="设置" onclick="switchSection('settings')">设置</button>
+      <button id="tree-toggle" class="nav-icon" title="切换课程树显示" onclick="toggleTreePane()">折叠</button>
+    </nav>
+
+    <aside class="tree-pane">
+      <div class="tree-header">
+        <div class="tree-search">
+          <input id="tree-search-input" class="tree-search-input" type="text" placeholder="搜索课程 / 模块 / 实验" />
+          <button id="tree-search-button" type="button" class="btn btn-secondary tree-search-button">搜索</button>
+          <button class="btn btn-primary" style="min-width:40px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.4rem;" onclick="openCourseModal()" title="新建课程">+</button>
+        </div>
+      </div>
+      <div id="tree-content" class="tree-content"></div>
+      <div id="tree-lab-panel" class="tree-lab-panel"></div>
+    </aside>
+
+    <main class="main-pane">
+      <div id="content-body" class="content-body"></div>
+      <div id="workspace-view" class="workspace-view hidden">
+        <div class="workspace-columns">
+          <div class="manual-column">
+            <div class="manual-scroll">
+              <div id="manual-search-bar" class="manual-search-bar hidden">
+                <input id="manual-search-input" class="manual-search-input" type="text" placeholder="搜索手册内容" />
+                <div id="manual-search-count" class="manual-search-count">0 / 0</div>
+                <button type="button" class="btn btn-secondary manual-search-btn" id="manual-search-prev">上一个</button>
+                <button type="button" class="btn btn-secondary manual-search-btn" id="manual-search-next">下一个</button>
+                <button type="button" class="btn btn-secondary manual-search-btn" id="manual-search-close">关闭</button>
+              </div>
+              <div id="manual-restore-banner" class="manual-restore-banner hidden">
+                <span class="manual-restore-banner-text">检测到上次阅读进度，是否恢复？</span>
+                <button type="button" class="btn btn-primary manual-restore-btn" id="manual-restore-yes">恢复到上次阅读的位置</button>
+                <button type="button" class="btn btn-secondary manual-restore-btn" id="manual-restore-no">从开头开始</button>
+              </div>
+              <div id="manual-progress" class="manual-progress"></div>
+              <div id="manual" class="manual"></div>
+            </div>
+          </div>
+          <div class="resizer" id="workspace-resizer"></div>
+          <div class="terminal-column">
+            <div id="terminal-container"></div>
+          </div>
+        </div>
+        <div id="manual-context-menu" class="manual-context-menu hidden">
+          <button type="button" class="manual-context-item" id="manual-context-copy">复制</button>
+        </div>
+        <div id="manual-image-viewer" class="manual-image-viewer hidden">
+          <div class="manual-image-backdrop"></div>
+          <div class="manual-image-shell">
+            <div id="manual-image-stage" class="manual-image-stage">
+              <img id="manual-image-preview" class="manual-image-preview" alt="" />
+            </div>
+            <div class="manual-image-actions">
+              <button type="button" class="btn btn-secondary manual-image-action" id="manual-image-zoom-out">-</button>
+              <button type="button" class="btn btn-secondary manual-image-action" id="manual-image-zoom-in">+</button>
+              <button type="button" class="btn btn-secondary manual-image-action" id="manual-image-reset">重置</button>
+              <button type="button" class="btn btn-secondary manual-image-action" id="manual-image-close">关闭</button>
+            </div>
+          </div>
+        </div>
+        <div id="toast-stack" class="toast-stack"></div>
+      </div>
+    </main>
+  </div>
+
+  <div id="modal-course" class="modal-overlay">
+    <div class="modal">
+      <h3 id="course-modal-title">新增课程</h3>
+      <div class="field-grid">
+        <div class="field"><label for="course-name">课程名称</label><input id="course-name" placeholder="例如：Linux 基础" /></div>
+        <div class="field"><label for="course-icon">课程图标</label><input id="course-icon" placeholder="例如：📦" /></div>
+        <div class="field-full"><label for="course-description">课程简介</label><textarea id="course-description" placeholder="请描述该课程的学习目标和覆盖范围。"></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-course')">取消</button>
+        <button class="btn btn-primary" onclick="saveCourse()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-module" class="modal-overlay">
+    <div class="modal">
+      <h3 id="module-modal-title">新增 B 级目录</h3>
+      <div class="field-grid">
+        <div class="field-full"><label for="module-name">目录名称</label><input id="module-name" placeholder="例如：Linux 文件系统 / systemd" /></div>
+        <div class="field-full"><label for="module-description">目录简介</label><textarea id="module-description" placeholder="描述该学习单元的主题。"></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-module')">取消</button>
+        <button class="btn btn-primary" onclick="saveModule()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-lab" class="modal-overlay">
+    <div class="modal modal-lg">
+      <div class="modal-body">
+        <div class="editor-pane">
+          <h3 id="lab-modal-title">编辑实验</h3>
+          <div class="field-full"><label for="lab-title">实验标题</label><input id="lab-title" placeholder="例如：Linux 文件基础操作" /></div>
+          <div id="lab-modal-validation-msg" class="hint" style="margin-top:4px; color:#ef4444;"></div>
+          
+          <!-- 资源管理区域 -->
+          <div class="field-full" style="margin-top:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <label style="margin-bottom:0;">关联资源 (从手册解析)</label>
+              <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.85rem;" onclick="addLabResourcePrompt()">+ 添加虚拟机</button>
+            </div>
+            <div id="lab-resource-list" class="list" style="max-height:160px; background:#12151b; border:1px solid #3b4453; border-radius:10px; padding:8px;">
+              <div class="hint" style="padding:8px;">尚未解析到资源定义，请在手册中定义 resources。</div>
+            </div>
+          </div>
+
+          <div class="field-full" style="flex:1; display:flex; flex-direction:column; margin-top:12px;">
+            <label for="lab-manual">实验手册 (Markdown)</label>
+            <textarea id="lab-manual" placeholder="# 实验目标\n\n在此输入手册内容..." oninput="updateLabPreview()"></textarea>
+          </div>
+        </div>
+        <div class="preview-pane">
+          <div class="manual" id="lab-preview-manual"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-lab')">取消</button>
+        <button class="btn btn-primary" onclick="saveLab()">保存并发布</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-lab-resource" class="modal-overlay">
+    <div class="modal">
+      <h3 id="lab-resource-modal-title">添加虚拟机资源</h3>
+      <div class="field-grid">
+        <div class="field-full"><label for="lab-res-name">虚拟机名称 (唯一标识)</label><input id="lab-res-name" placeholder="例如：server-01" /></div>
+        <div class="field"><label for="lab-res-os">操作系统 (模板)</label>
+          <select id="lab-res-os">
+            <option value="RockyBase">RockyBase (默认)</option>
+          </select>
+        </div>
+        <div class="field"><label for="lab-res-cpu">CPU 核心数</label><input id="lab-res-cpu" type="number" value="1" min="1" max="16" /></div>
+        <div class="field"><label for="lab-res-memory">内存大小 (MB)</label><input id="lab-res-memory" type="number" value="1024" min="256" step="256" /></div>
+        <div class="field-full" style="margin-top:8px;"><label><input id="lab-res-reuse" type="checkbox" checked style="width:auto; margin-right:8px;" />允许复用 (reuse)</label></div>
+      </div>
+      <div id="lab-res-validation-msg" class="hint" style="margin-top:12px; color:#ef4444;"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-lab-resource')">取消</button>
+        <button class="btn btn-primary" onclick="confirmAddLabResource()">保存资源</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-bind-ssh" class="modal-overlay">
+    <div class="modal">
+      <h3>Bind My SSH Server</h3>
+      <div class="field-grid">
+        <div class="field"><label for="bind-ssh-label">Resource Label</label><input id="bind-ssh-label" placeholder="For example My Rocky Server" /></div>
+        <div class="field"><label for="bind-ssh-host">IP / Host</label><input id="bind-ssh-host" placeholder="For example 192.168.1.10" /></div>
+        <div class="field"><label for="bind-ssh-username">Username</label><input id="bind-ssh-username" value="root" /></div>
+        <div class="field"><label for="bind-ssh-password">Password</label><input id="bind-ssh-password" type="password" placeholder="Password" /></div>
+        <div class="field-full"><label><input id="bind-ssh-reusable" type="checkbox" checked style="width:auto; margin-right:8px;" />Allow future labs to reuse this server</label></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-bind-ssh')">取消</button>
+        <button class="btn btn-primary" onclick="bindManualSshResource()">Save And Bind</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-import-preview" class="modal-overlay">
+    <div class="modal">
+      <h3>导入预览</h3>
+      <div id="import-preview-summary" class="hint"></div>
+      <div class="field-grid" style="margin-top:14px;">
+        <div class="field"><label for="import-duplicate-mode">Duplicate Labs</label>
+          <select id="import-duplicate-mode">
+            <option value="skip">跳过已存在的实验</option>
+            <option value="overwrite">覆盖已存在的实验</option>
+          </select>
+        </div>
+        <div class="field"><label><input id="import-force-current-module" type="checkbox" style="width:auto; margin-right:8px;" />Import into current B-level module only</label></div>
+      </div>
+      <div id="import-preview-list" class="list" style="margin-top:14px; max-height:360px;"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-import-preview')">取消</button>
+        <button class="btn btn-primary" onclick="confirmImportPreview()">确认导入</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-delete" class="modal-overlay">
+    <div class="modal">
+      <h3 id="delete-modal-title">Confirm Delete</h3>
+      <p id="delete-modal-message" class="hint"></p>
+      <div class="field-full"><label for="delete-confirm-input">输入 delete</label><input id="delete-confirm-input" placeholder="delete" /></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-delete')">取消</button>
+        <button class="btn btn-danger" onclick="confirmDeleteAction()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-vm-input" class="modal-overlay">
+    <div class="modal">
+      <h3 id="vm-input-title">Input</h3>
+      <p id="vm-input-desc" class="hint"></p>
+      <div class="field-full">
+        <label for="vm-input-value">Value</label>
+        <input id="vm-input-value" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cancelVmTextPrompt()">取消</button>
+        <button class="btn btn-primary" onclick="confirmVmTextPrompt()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer-vendor.js"></script>
+  <script src="node_modules/xterm/lib/xterm.js"></script>
+  <script src="node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+  <script src="renderer-model.js"></script>
+  <script src="renderer-ui.js"></script>
+  <script src="renderer-actions.js"></script>
+  <script src="renderer-ops.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

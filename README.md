@@ -91,6 +91,6 @@ linux教程方面，属红帽最为知名，因此配套课程以红帽作为编
 其他介绍在说明数中，可前往查看。
 
 ## 软件安装
-npm start，依赖npm环境。
+cmd命令进入项目目录后，npm install下载依赖，然后再npm start
 下面是打包好的，超过100M，github无法上传。
 链接: https://pan.baidu.com/s/1l5PtiP-e9LmixzB0NBYvkA 提取码: p8mh
